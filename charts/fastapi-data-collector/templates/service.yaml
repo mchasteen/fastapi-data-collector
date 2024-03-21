@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "fastapi-data-collector.fullname" . }}
+  labels:
+    {{- include "fastapi-data-collector.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.name}}
+      protocol: TCP
+  selector:
+    {{- include "fastapi-data-collector.selectorLabels" . | nindent 4 }}

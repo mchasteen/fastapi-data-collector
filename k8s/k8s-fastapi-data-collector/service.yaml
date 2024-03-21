@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: fastapi-data-collector-service
+  namespace: fastapi-data-collector
+  labels:
+    app: fastapi-data-collector
+spec:
+  selector:
+    app: fastapi-data-collector-app
+  ports:
+    - port: 5000
+      targetPort: 5000
+  # type: LoadBalancer

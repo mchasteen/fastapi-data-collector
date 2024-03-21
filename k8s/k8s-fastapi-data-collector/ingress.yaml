@@ -1,0 +1,29 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: fastapi-data-collector-ingress
+  namespace: fastapi-data-collector
+  annotations:
+    cert-manager.io/issuer: step-cluster-issuer
+    cert-manager.io/issuer-group: certmanager.step.sm
+    cert-manager.io/issuer-kind: StepClusterIssuer
+    external-dns.alpha.kubernetes.io/hostname: fastapi-data-collector.home.local
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      proxy_set_header X-Forwarded-For $remote_addr;
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: fastapi-data-collector.home.local
+    http:
+      paths:
+      - backend:
+          service:
+            name: fastapi-data-collector-service
+            port:
+              number: 5000
+        path: /
+        pathType: Prefix
+  tls:
+  - hosts:
+    - fastapi-data-collector.home.local
+    secretName: fastapi-data-collector.home.local-tls

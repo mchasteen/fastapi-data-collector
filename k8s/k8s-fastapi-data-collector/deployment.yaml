@@ -1,0 +1,98 @@
+# https://www.strangebuzz.com/en/snippets/checking-if-the-elasticsearch-service-of-a-docker-container-is-ready
+# https://joeblogs.technology/2020/12/concatenating-kubernetes-secrets-for-environment-variables/
+# https://kubernetes.io/docs/tasks/inject-data-application/environment-variable-expose-pod-information/
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fastapi-data-collector-deployment
+  namespace: fastapi-data-collector
+  labels:
+    app: fastapi-data-collector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fastapi-data-collector-app
+  template:
+    metadata:
+      labels:
+        app: fastapi-data-collector-app
+    spec:
+      initContainers:
+      - name: init-elasticsearch-wait
+        image: curlimages/curl:latest
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: ES_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: elasticsearch-master-credentials
+              key: username
+        - name: ES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: elasticsearch-master-credentials
+              key: password
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: ES_SERVICE
+          value: "elasticsearch-master.$(POD_NAMESPACE)"
+        - name: ES_PORT
+          value: "9200"
+        - name: ELASTICSEARCH_HOSTS
+          value: "https://$(ES_USERNAME):$(ES_PASSWORD)@$(ES_SERVICE):$(ES_PORT)"
+        command: ['sh', '-c', 'seconds=1; until curl -k "$(ELASTICSEARCH_HOSTS)/_cluster/health?wait_for_status=yellow&timeout=30s"; do >&2 echo "Elastisearch is unavailable - waiting for it... ($seconds)"; sleep 1; seconds=$(expr $seconds + 1); done']
+
+      containers:
+      - image: harbor.home.local/fastapi/fastapi-data-collector:latest
+        imagePullPolicy: Always
+        name: fastapi-data-collector
+        env:
+        - name: ES_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: elasticsearch-master-credentials
+              key: username
+        - name: ES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: elasticsearch-master-credentials
+              key: password
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: ES_SERVICE
+          value: "elasticsearch-master.$(POD_NAMESPACE)"
+        - name: ES_PORT
+          value: "9200"
+        - name: ELASTICSEARCH_HOSTS
+          value: "https://$(ES_USERNAME):$(ES_PASSWORD)@$(ES_SERVICE):$(ES_PORT)"
+        - name: ELASTICSEARCH_VERIFY_SSL
+          value: "False"
+        - name: ENABLE_DEBUG
+          value: "True"
+        ports:
+        - containerPort: 5000
+          name: fastapi
+        readinessProbe:
+          httpGet:
+            port: fastapi
+            path: /docs
+          initialDelaySeconds: 3
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            port: fastapi
+            path: /docs
+          initialDelaySeconds: 5
+          periodSeconds: 15
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "0.5"
+          limits:
+            memory: "1Gi"
+            cpu: "1"

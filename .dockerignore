@@ -1,0 +1,7 @@
+k8s
+docs
+README.md
+__pycache__
+.idea
+.venv
+.vscode
