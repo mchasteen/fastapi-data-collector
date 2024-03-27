@@ -8,6 +8,10 @@ on:
 
 env:
   IMAGE_NAME: fastapi-data-collector
+
+permissions:
+  packages: write
+
 jobs:
 
   build:
