@@ -10,7 +10,7 @@ initContainer:
   tag: latest
 
 image:
-  repository: harbor.harbor/fastapi/fastapi-data-collector #Needs to be changed
+  repository: ghcr.io/mchasteen/fastapi-data-collector
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: latest
